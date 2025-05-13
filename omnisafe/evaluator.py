@@ -400,7 +400,7 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
         self,
         num_episodes: int = 10,
         cost_criteria: float = 1.0,
-    ) -> tuple[list[float], list[float]]:
+    ) -> tuple[list[float], list[float], list[float], list[str]]:
         """Evaluate the agent for num_episodes episodes.
 
         Args:
@@ -408,7 +408,7 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
             cost_criteria (float, optional): The cost criteria. Defaults to 1.0.
 
         Returns:
-            (episode_rewards, episode_costs): The episode rewards and costs.
+            (episode_rewards, episode_costs, episode_lengths, episode_outcomes): The episode rewards and costs.
 
         Raises:
             ValueError: If the environment and the policy are not provided or created.
@@ -421,11 +421,15 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
         episode_rewards: list[float] = []
         episode_costs: list[float] = []
         episode_lengths: list[float] = []
+        episode_outcomes: list[str] = []
 
         for episode in range(num_episodes):
             obs, _ = self._env.reset()
             self._safety_obs = torch.ones(1)
             ep_ret, ep_cost, length = 0.0, 0.0, 0.0
+
+            final_info: dict[str, Any] = {} 
+            terminated, truncated = False, False
 
             done = False
             while not done:
@@ -452,13 +456,15 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
                         raise ValueError(
                             'The policy must be provided or created before evaluating the agent.',
                         )
-                obs, rew, cost, terminated, truncated, _ = self._env.step(act)
+                obs, rew, cost, terminated, truncated, info = self._env.step(act)
+                final_info = info
                 if 'Saute' in self._cfgs['algo'] or 'Simmer' in self._cfgs['algo']:
                     self._safety_obs -= cost.unsqueeze(-1) / self._safety_budget
                     self._safety_obs /= self._cfgs.algo_cfgs.saute_gamma
 
                 ep_ret += rew.item()
                 ep_cost += (cost_criteria**length) * cost.item()
+
                 if (
                     'EarlyTerminated' in self._cfgs['algo']
                     and ep_cost >= self._cfgs.algo_cfgs.cost_limit
@@ -472,10 +478,29 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
             episode_costs.append(ep_cost)
             episode_lengths.append(length)
 
-            print(f'Episode {episode} results:')
-            print(f'Episode reward: {ep_ret}')
-            print(f'Episode cost: {ep_cost}')
-            print(f'Episode length: {length}')
+            # cetermine outcome based on final_info, terminated, and truncated
+            outcome = "unknown"
+            # check for custom environment flags first
+            if final_info.get('is_success', False):
+                outcome = "success"
+            elif final_info.get('is_collision', False):
+                outcome = "collision"
+            # Then check truncation (e.g., TimeLimit)
+            elif truncated:
+                if final_info.get("TimeLimit.truncated", False) or final_info.get("timeout", False):
+                    outcome = "timeout"
+                else:
+                    outcome = "timeout"
+            # Then check other terminations
+            elif terminated:
+                outcome = "terminated_other" # Terminated but not success or collision
+            
+            episode_outcomes.append(outcome)
+
+            print(f'Episode {episode} reward: {ep_ret}')
+            print(f'Episode {episode} cost: {ep_cost}')
+            print(f'Episode {episode} length: {length}')
+            print(f'Episode {episode} outcome: {outcome}')
 
         print(self._dividing_line)
         print('Evaluation results:')
@@ -483,10 +508,19 @@ class Evaluator:  # pylint: disable=too-many-instance-attributes
         print(f'Average episode cost: {np.mean(a=episode_costs)}')
         print(f'Average episode length: {np.mean(a=episode_lengths)}')
 
+        print('Episode outcome counts and rates:')
+        outcome_counts = {k: episode_outcomes.count(k) for k in sorted(list(set(episode_outcomes)))}
+        for outcome_type, count in outcome_counts.items():
+            rate = count / num_episodes * 100
+            print(f'  {outcome_type}: {count} ({rate:.2f}%)')
+        print(self._dividing_line)
+
         self._env.close()
         return (
             episode_rewards,
             episode_costs,
+            episode_lengths,
+            episode_outcomes,
         )
 
     @property
