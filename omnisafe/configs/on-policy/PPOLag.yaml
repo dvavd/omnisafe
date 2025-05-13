@@ -128,6 +128,8 @@ defaults:
     lambda_lr: 0.035
     # Type of lagrangian optimizer
     lambda_optimizer: "Adam"
+    # Lagrangian multiplier upper bound
+    lagrangian_upper_bound: null
   # environment specific configurations
   env_cfgs: {}
 
