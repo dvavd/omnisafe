@@ -271,6 +271,12 @@ class SocialNavHumanInteraction(nn.Module):
 
 
     def forward(self, obs_dict):
+        for name, param in self.named_parameters():
+            if torch.isnan(param).any():
+                print(f"NaN found in parameter: {name}")
+                print(f"Parameter shape: {param.shape}")
+                print(f"NaN count: {torch.isnan(param).sum().item()}")
+        
         obs = obs_dict
         # print(f"obs shape: {obs.shape}")
         if obs.dim() == 1:
