@@ -271,10 +271,7 @@ class SocialNavHumanInteraction(nn.Module):
 
 
     def forward(self, obs_dict):
-        if not self.stable_baseline:
-            obs = obs_dict['obs']
-        else:
-            obs = obs_dict
+        obs = obs_dict
         #print("obs shape", obs.shape)
         batch_size = obs.size(0)
         robot_state = obs[:, 0:4]  # Robot [vx,vy,gx,gy]
