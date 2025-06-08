@@ -235,10 +235,21 @@ class SocialNavHumanInteraction(nn.Module):
         self.mlp3 = mlp(mlp3_input_dim, mlp3_dims)
         self.attention_weights = None  # not used for now
         ###
+        #if self.learn_no_human_embedding:
+        #    self.no_human_embedding = nn.Parameter(torch.empty(self.human_out_dim), requires_grad=True)
+        #    nn.init.xavier_uniform_(self.no_human_embedding.unsqueeze(0))  # while kaiming_uniform_ is default, its mainly designed for relu, so we use xavier_uniform_
+        ###
+
+        # try different initialization
         if self.learn_no_human_embedding:
             self.no_human_embedding = nn.Parameter(torch.empty(self.human_out_dim), requires_grad=True)
-            nn.init.xavier_uniform_(self.no_human_embedding.unsqueeze(0))  # while kaiming_uniform_ is default, its mainly designed for relu, so we use xavier_uniform_
-        ###
+            nn.init.normal_(self.no_human_embedding, mean=0.0, std=0.1)
+        
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.xavier_normal_(module.weight, gain=0.5) 
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
 
         # lidar
         if self.add_lidar:
