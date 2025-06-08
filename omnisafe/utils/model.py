@@ -272,7 +272,11 @@ class SocialNavHumanInteraction(nn.Module):
 
     def forward(self, obs_dict):
         obs = obs_dict
-        #print("obs shape", obs.shape)
+        # print(f"obs shape: {obs.shape}")
+        if obs.dim() == 1:
+            obs = obs.unsqueeze(0)
+        if torch.isnan(obs).any():
+            print(f"obs is nan: {obs}")
         batch_size = obs.size(0)
         robot_state = obs[:, 0:4]  # Robot [vx,vy,gx,gy]
         human_obs = obs[:, 4 + self.lidar_hist_steps * self.lidar_num_rays:]
@@ -325,8 +329,12 @@ class SocialNavHumanInteraction(nn.Module):
         #    pdb.set_trace()
 
         if self.is_value_function:
+            if value.shape[0] == 1:
+                value = value.squeeze(0)
             return value
         else:
+            if torch.isnan(action).any():
+                print(f"action is nan: {action}")
             return action
 
     def forward_actor(self, obs):
