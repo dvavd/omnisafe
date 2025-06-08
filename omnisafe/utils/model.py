@@ -243,7 +243,7 @@ class SocialNavHumanInteraction(nn.Module):
 
         if self.learn_no_human_embedding:
             self.no_human_embedding = nn.Parameter(torch.empty(self.human_out_dim), requires_grad=True)
-            nn.init.xavier_uniform_(self.no_human_embedding)
+            nn.init.xavier_uniform_(self.no_human_embedding, gain=0.5)  # while kaiming_uniform_ is default, its mainly designed for relu, so we use xavier_uniform_
         
         # if self.learn_no_human_embedding:
         #     self.no_human_embedding = nn.Parameter(torch.empty(self.human_out_dim), requires_grad=True)
