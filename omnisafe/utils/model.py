@@ -20,6 +20,7 @@ import numpy as np
 from torch import nn
 
 from omnisafe.typing import Activation, InitFunction
+from omnisafe.utils.tools import get_device
 
 
 def initialize_layer(init_function: InitFunction, layer: nn.Linear) -> None:
@@ -166,6 +167,7 @@ def compute_1dconv_size(L_in=50, kernel=3, stride=2, padding=0):
 
 class SocialNavHumanInteraction(nn.Module):
     def __init__(self, sizes):
+        #device = get_device(cfgs.train_cfgs.device)
         super().__init__()
         actions_dim = 2
         self.kinematics = "holonomic"
@@ -392,6 +394,7 @@ class SocialNavHumanInteraction(nn.Module):
         """
         assert not self.with_om
         device = human_obs.device
+        print(device)
         batch_size, max_num_humans, human_obs_dim = human_obs.shape
 
         # Create mask for real humans (non-padded)
@@ -482,6 +485,8 @@ class SocialNavHumanInteraction(nn.Module):
         5. compute attention scores using attention MLP layer
         """
         device = human_obs.device
+        print(device)
+        assert not self.with_om
         batch_size = human_obs.shape[0]
 
         human_output = torch.zeros((batch_size, self.human_out_dim), device=device, dtype=human_obs.dtype)
@@ -555,7 +560,8 @@ class SocialNavHumanInteraction(nn.Module):
         a, b = human_states.shape
         assert b == 4
         device = human_states.device
-        
+        print(device)
+
         occupancy_maps = torch.zeros((human_states.shape[0], (self.cell_num**2) * self.om_channel_size), device=device, dtype=human_states.dtype)
         for idx, human in enumerate(human_states):
             other_humans = human_states[torch.arange(human_states.size(0), device=device) != idx]
