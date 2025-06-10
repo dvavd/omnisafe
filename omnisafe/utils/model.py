@@ -70,7 +70,7 @@ def get_activation(
     return activations[activation]
 
 
-def build_mlp_network(
+def _build_mlp_network(
     sizes: list[int],
     activation: Activation,
     output_activation: Activation = 'identity',
@@ -110,7 +110,7 @@ def build_mlp_network(
         layers += [affine_layer, act_fn()]
     return nn.Sequential(*layers)
 
-def _build_mlp_network(
+def build_mlp_network(
     sizes: list[int],
     activation: Activation,
     output_activation: Activation = 'identity',
