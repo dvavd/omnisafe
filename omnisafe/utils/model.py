@@ -289,7 +289,6 @@ class SocialNavHumanInteraction(nn.Module):
                 print(f"NaN count: {torch.isnan(param).sum().item()}")
         
         obs = obs_dict
-        print(f"obs device: {obs.device}")
         # print(f"obs shape: {obs.shape}")
         if obs.dim() == 1:
             obs = obs.unsqueeze(0)
@@ -353,7 +352,6 @@ class SocialNavHumanInteraction(nn.Module):
         else:
             if torch.isnan(action).any():
                 print(f"action is nan: {action}")
-            print(f"action device: {action.device}")
 
             return action
 
