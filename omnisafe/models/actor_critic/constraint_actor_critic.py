@@ -72,7 +72,7 @@ class ConstraintActorCritic(ActorCritic):
             num_critics=1,
             use_obs_encoder=False,
         ).build_critic('v')
-        print(self.cost_critic.device)
+        print(next(self.cost_critic.parameters()).device)
 
         self.add_module('cost_critic', self.cost_critic)
 
